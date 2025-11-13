@@ -1,23 +1,21 @@
 
 CREATE TABLE teams (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) PRIMARY KEY,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
+    id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    team_id BIGINT REFERENCES teams(id),
+    team_id VARCHAR(255) REFERENCES teams(name),
     is_active BOOL NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE pull_requests (
-    id BIGSERIAL PRIMARY KEY,
-    pr_id VARCHAR(255) UNIQUE NOT NULL,
-    pr_name VARCHAR(1024) NOT NULL,
-    author_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(1024) NOT NULL,
+    author_id VARCHAR(255) REFERENCES users(id) ON DELETE SET NULL,
     status VARCHAR(128) NOT NULL,
     merged_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -25,9 +23,8 @@ CREATE TABLE pull_requests (
 
 
 CREATE TABLE reviewers (
-    id BIGSERIAL PRIMARY KEY,
-    pr_id BIGINT NOT NULL REFERENCES pull_requests(id),
-    reviewer_id BIGINT NOT NULL REFERENCES users(id),
+    pr_id VARCHAR(255) NOT NULL REFERENCES pull_requests(id),
+    reviewer_id VARCHAR(255) NOT NULL REFERENCES users(id),
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (pr_id, reviewer_id)
-)
+);
