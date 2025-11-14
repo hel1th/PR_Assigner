@@ -6,8 +6,8 @@ CREATE TABLE teams (
 
 CREATE TABLE users (
     id VARCHAR(255) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    team_id VARCHAR(255) REFERENCES teams(name),
+    username VARCHAR(255) NOT NULL,
+    team_name VARCHAR(255) REFERENCES teams(name),
     is_active BOOL NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
