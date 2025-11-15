@@ -58,7 +58,7 @@ func (r *teamRepo) GetTeam(ctx context.Context, teamName string) (*domain.Team, 
 	return &domain.Team{Name: teamName, Members: teamMembers}, nil
 }
 
-func (r *teamRepo) GetActiveTeamMembers(ctx context.Context, authorID string) ([]string, error) {
+func (r *teamRepo) GetActiveTeamMembers(ctx context.Context, authorID string) (revsID []string, err error) {
 	query := `
         SELECT u2.id 
         FROM users u1
@@ -83,8 +83,14 @@ func (r *teamRepo) GetActiveTeamMembers(ctx context.Context, authorID string) ([
 		}
 		members = append(members, id)
 	}
+	if rows.Err() != nil {
+		return nil, err
+	}
 
-	return members, rows.Err()
+	if len(members) == 0 {
+		return nil, apperrors.NoCandidate
+	}
+	return members, nil
 }
 
 func (r *teamRepo) CreateTeam(ctx context.Context, teamName string, members []domain.TeamMember) error {

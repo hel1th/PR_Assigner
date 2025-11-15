@@ -5,7 +5,7 @@ import "time"
 type User struct {
 	ID        string
 	Username  string
-	TeamID    string
-	IsActive  string
+	TeamName  string
+	IsActive  bool
 	CreatedAt time.Time
 }

@@ -12,7 +12,7 @@ import (
 
 type PullReqRepository interface {
 	Create(ctx context.Context, pr *domain.PullRequest) error
-	GetByID(ctx context.Context, id string) (*domain.PullRequest, error)
+	GetPullReq(ctx context.Context, id string) (*domain.PullRequest, error)
 	Update(ctx context.Context, pr *domain.PullRequest) error
 	Exists(ctx context.Context, id string) (bool, error)
 
@@ -127,7 +127,7 @@ func (r *pullReqRepo) Create(ctx context.Context, pr *domain.PullRequest) error 
 	return nil
 }
 
-func (r *pullReqRepo) GetByID(ctx context.Context, prID string) (*domain.PullRequest, error) {
+func (r *pullReqRepo) GetPullReq(ctx context.Context, prID string) (*domain.PullRequest, error) {
 	var (
 		pr       domain.PullRequest
 		status   domain.PRStatus

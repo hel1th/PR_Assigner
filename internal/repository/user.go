@@ -3,22 +3,41 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/hel1th/PR_Assigner/internal/apperrors"
 	"github.com/hel1th/PR_Assigner/internal/domain"
 )
 
 type UserRepository interface {
+	GetUser(ctx context.Context, id string) (*domain.User, error)
 	SetActive(ctx context.Context, id string, isActive bool) error
 	GetReviewPRs(ctx context.Context, userID string) ([]*domain.PullRequest, error)
+	Exists(ctx context.Context, prID string) (bool, error)
 }
 
 type userRepo struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) UserRepository {
-	return &userRepo{db: db}
+func (r *userRepo) GetUser(ctx context.Context, id string) (*domain.User, error) {
+	query := `
+			SELECT id, username, team_name, is_active, created_at FROM users
+			WHERE id=$1
+			`
+	row := r.db.QueryRowContext(ctx, query, id)
+
+	var us domain.User
+
+	err := row.Scan(&us.ID, &us.Username, &us.TeamName, &us.IsActive, &us.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.NotFound
+		}
+		return nil, err
+	}
+
+	return &us, nil
 }
 
 func (r *userRepo) SetActive(ctx context.Context, id string, isActive bool) error {
@@ -44,6 +63,14 @@ func (r *userRepo) SetActive(ctx context.Context, id string, isActive bool) erro
 
 	return nil
 }
+func (r *userRepo) Exists(ctx context.Context, prID string) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM users WHERE id=$1)`
+
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, prID).Scan(&exists)
+
+	return exists, err
+}
 
 func (r *userRepo) GetReviewPRs(ctx context.Context, userID string) ([]*domain.PullRequest, error) {
 	query := `
@@ -53,6 +80,14 @@ func (r *userRepo) GetReviewPRs(ctx context.Context, userID string) ([]*domain.P
 		WHERE r.reviewer_id = $1
 		ORDER BY pr.created_at DESC
 	`
+
+	exists, err := r.Exists(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, apperrors.NotFound
+	}
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
@@ -74,4 +109,8 @@ func (r *userRepo) GetReviewPRs(ctx context.Context, userID string) ([]*domain.P
 	}
 
 	return prs, nil
+}
+
+func NewUserRepository(db *sql.DB) UserRepository {
+	return &userRepo{db: db}
 }
