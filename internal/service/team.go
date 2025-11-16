@@ -36,6 +36,13 @@ func (s *teamService) CreateTeam(ctx context.Context, teamName string, members [
 		}
 	}
 
+	exists, err := s.teamRepo.Exists(ctx, teamName)
+	if err != nil {
+		return fmt.Errorf("failed to check team exisitance: %w", err)
+	}
+	if exists {
+		return apperrors.TeamExists
+	}
 	if err := s.teamRepo.CreateTeam(ctx, teamName, members); err != nil {
 		return fmt.Errorf("failed to create team: %w", err)
 	}

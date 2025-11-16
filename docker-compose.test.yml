@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  test_db:
+    image: postgres:15
+    container_name: pr_assigner_test_db
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: pr_assigner_test
+    ports:
+      - "5434:5432" #
+    volumes:
+      - ./migrations/001_init_db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U test_user" ]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+
+  test_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pr_assigner_test_api
+    environment:
+      DATABASE_URL: postgres://test_user:test_password@test_db:5432/pr_assigner_test?sslmode=disable
+      SERVER_ADDRESS: 0.0.0.0:8080
+    ports:
+      - "8081:8080"
+    depends_on:
+      test_db:
+        condition: service_healthy
