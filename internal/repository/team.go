@@ -13,9 +13,22 @@ type TeamRepository interface {
 	GetTeam(ctx context.Context, teamName string) (*domain.Team, error)
 	CreateTeam(ctx context.Context, teamName string, Members []domain.TeamMember) error
 	GetActiveTeamMembers(ctx context.Context, authorID string) ([]string, error)
+	Exists(ctx context.Context, teamName string) (bool, error)
 }
 type teamRepo struct {
 	db *sql.DB
+}
+
+func (r *teamRepo) Exists(ctx context.Context, teamName string) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM teams WHERE name = $1)`
+
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, teamName).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check team existence: %w", err)
+	}
+
+	return exists, nil
 }
 
 func (r *teamRepo) GetTeam(ctx context.Context, teamName string) (*domain.Team, error) {

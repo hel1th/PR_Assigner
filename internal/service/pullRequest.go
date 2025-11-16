@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand/v2"
-
 	"time"
 
 	"github.com/hel1th/PR_Assigner/internal/apperrors"
@@ -43,6 +42,9 @@ func (s *pullReqSvc) CreatePullReq(ctx context.Context, prID, prName, authorID s
 
 	exists, err := s.pullReqRepo.Exists(ctx, prID)
 	if err != nil {
+		if errors.Is(err, apperrors.PRExists) {
+			return nil, apperrors.PRExists
+		}
 		return nil, err
 	}
 	if exists {
@@ -171,12 +173,11 @@ func (s *pullReqSvc) ReassignReviewer(ctx context.Context, prID, oldReviewerID s
 	for _, revID := range pr.AssignedReviewers {
 		if revID == oldReviewerID {
 			oldRevFound = true
-			break
 		}
 	}
 
 	if !oldRevFound {
-		return apperrors.NotFound
+		return apperrors.NotAssigned
 	}
 
 	oldRev, err := s.userRepo.GetUser(ctx, oldReviewerID)
@@ -255,7 +256,6 @@ func (s *pullReqSvc) ListPullReqsByReviewer(ctx context.Context, reviewerID stri
 	}
 
 	return prs, nil
-
 }
 
 func NewPullReqSvc(
@@ -263,7 +263,6 @@ func NewPullReqSvc(
 	userRepo repository.UserRepository,
 	teamRepo repository.TeamRepository,
 ) PullRequestService {
-
 	return &pullReqSvc{
 		pullReqRepo: prRepo,
 		userRepo:    userRepo,
