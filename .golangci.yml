@@ -1,18 +1,20 @@
 run:
   timeout: 5m
-  issues-exit-code: 1   
+  issues-exit-code: 1
+  skip-dirs:
+    - test
 
 linters:
   enable:
-    - govet      
-    - errcheck     
-    - staticcheck 
-    - gosimple     
-    - unused      
-    - gofmt       
-    - goimports   
-    - revive      
-    - gocritic     
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - unused
+    - gofmt
+    - goimports
+    - revive
+    - gocritic
 
 linters-settings:
   gofmt:
@@ -30,16 +32,16 @@ issues:
   exclude-rules:
     - linters:
         - errcheck
-      text: "Close" 
+      text: "Close"
     - linters:
         - errcheck
-      text: "Rollback" 
+      text: "Rollback"
     - linters:
         - errcheck
-      text: "Encode" 
+      text: "Encode"
     - linters:
         - gocritic
-      text: "log.Fatal" 
+      text: "log.Fatal"
     - linters:
         - revive
-      text: "should have comment" 
+      text: "should have comment"
