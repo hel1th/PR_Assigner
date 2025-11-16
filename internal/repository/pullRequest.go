@@ -142,7 +142,6 @@ func (r *pullReqRepo) GetPullReq(ctx context.Context, prID string) (*domain.Pull
 	err := r.db.QueryRowContext(ctx, prQuery, prID).Scan(
 		&pr.ID, &pr.Name, &pr.AuthorID,
 		&status, &pr.CreatedAt, &mergedAt)
-
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +161,7 @@ func (r *pullReqRepo) GetPullReq(ctx context.Context, prID string) (*domain.Pull
 	defer rows.Close()
 
 	var revID string
-	pr.AssignedReviewers = make([]string, 0, 2)
+	pr.AssignedReviewers = make([]string, 0)
 	for rows.Next() {
 		if err := rows.Scan(&revID); err != nil {
 			return nil, err
@@ -213,10 +212,13 @@ func (r *pullReqRepo) ReassignReviewer(ctx context.Context, prID, oldRevID, newR
 }
 
 func (r *pullReqRepo) ListByUser(ctx context.Context, userID string) ([]*domain.PullRequest, error) {
-	query := `SELECT p.id, p.name, p.author_id, p.status, p.created_at, p.merged_at
-				FROM pull_requests p
-				JOIN reviewers r ON r.pr_id = p.id
-				WHERE r.reviewer_id = $1`
+	query := `
+		SELECT pr.id, pr.name, pr.author_id, pr.status, pr.created_at, pr.merged_at
+		FROM pull_requests pr
+		INNER JOIN reviewers r ON pr.id = r.pr_id
+		WHERE r.reviewer_id = $1
+		ORDER BY pr.created_at DESC
+	`
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
@@ -224,29 +226,34 @@ func (r *pullReqRepo) ListByUser(ctx context.Context, userID string) ([]*domain.
 	}
 	defer rows.Close()
 
-	prsByUser := make([]*domain.PullRequest, 0)
+	prs := make([]*domain.PullRequest, 0)
 	for rows.Next() {
 		var (
 			pr       domain.PullRequest
 			mergedAt sql.NullTime
 			status   domain.PRStatus
 		)
+
 		err = rows.Scan(&pr.ID, &pr.Name, &pr.AuthorID, &status, &pr.CreatedAt, &mergedAt)
 		if err != nil {
 			return nil, err
 		}
 
+		pr.Status = status
 		if mergedAt.Valid {
 			pr.MergedAt = &mergedAt.Time
 		}
 
-		pr.Status = status
+		reviewers, err := r.ListReviewers(ctx, pr.ID)
+		if err != nil {
+			return nil, err
+		}
+		pr.AssignedReviewers = reviewers
 
-		prsByUser = append(prsByUser, &pr)
-
+		prs = append(prs, &pr)
 	}
 
-	return prsByUser, rows.Err()
+	return prs, rows.Err()
 }
 
 func (r *pullReqRepo) ListReviewers(ctx context.Context, prID string) ([]string, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/hel1th/PR_Assigner/internal/apperrors"
 	"github.com/hel1th/PR_Assigner/internal/domain"
 )
 
@@ -36,7 +37,15 @@ func (r *statsRepo) GetUserStats(ctx context.Context, teamName *string) ([]*doma
 
 	var args []interface{}
 	if teamName != nil {
-		query += " WHERE u.team_name = $1"
+		var exists bool
+		checkQuery := `SELECT EXISTS(SELECT 1 FROM teams WHERE name = $1)`
+		if err := r.db.QueryRowContext(ctx, checkQuery, teamName).Scan(&exists); err != nil {
+			return nil, err
+		}
+		if !exists {
+			return nil, apperrors.NotFound
+		}
+		query += " WHERE u.team_name = $1 "
 		args = append(args, *teamName)
 	}
 
