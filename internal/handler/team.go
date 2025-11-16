@@ -75,7 +75,6 @@ func (h *TeamHandler) GetTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	resp := dto.TeamFromDomain(team)
 
 	w.Header().Set("Content-Type", "application/json")
